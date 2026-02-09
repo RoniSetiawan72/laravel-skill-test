@@ -14,17 +14,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
-Route::get('posts', [PostController::class, 'index']);
-Route::get('/posts/create', [PostController::class, 'create'])->middleware('auth');
-Route::post('/posts', [PostController::class, 'store']);
+Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
+Route::get('/posts/create', [PostController::class, 'create'])->middleware('auth')->name('posts.create');
+Route::post('/posts', [PostController::class, 'store'])->middleware('auth')->name('posts.store');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->middleware('auth')->name('posts.edit');
-Route::put('/posts/{post}', [PostController::class, 'update'])->middleware('auth')->name('posts.update');
+Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('auth')->name('posts.update');
 Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('auth')->name('posts.destroy');
-
-Route::get('/csrf-token', function () {
-    return csrf_token();
-});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

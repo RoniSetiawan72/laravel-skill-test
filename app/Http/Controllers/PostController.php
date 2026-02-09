@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use Illuminate\Auth\Access\Authorize;
@@ -13,11 +14,16 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with('user')
-            ->where('is_draft', '1')
-            ->latest()
+            ->where('is_draft', false)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })
             ->paginate(20);
 
-        return PostResource::collection($posts);
+        return response()->json([
+            'data' => $posts
+        ]);
     }
 
     public function create()
@@ -27,10 +33,6 @@ class PostController extends Controller
 
     public function store(Request $request)
     {
-        if (! $request->user()) {
-            abort(401, 'Unauthenticated');
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -55,26 +57,28 @@ class PostController extends Controller
             ->where('is_draft', false)
             ->where(function ($q) {
                 $q->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
+                ->orWhere('published_at', '<=', now());
             })
             ->firstOrFail();
 
         return response()->json([
-            'data' => $post,
+            'data' => $post
         ]);
     }
 
-    #[Authorize('update', 'post')]
     public function edit(Post $post)
     {
+        $this->authorize('update', $post);
+
         return 'posts.edit';
     }
 
-    #[Authorize('update', 'post')]
     public function update(Request $request, Post $post)
     {
+        $this->authorize('update', $post);
+
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title'   => 'required|string|max:255',
             'content' => 'required|string',
         ]);
 
@@ -82,18 +86,18 @@ class PostController extends Controller
 
         return response()->json([
             'message' => 'Post updated successfully',
-            'data' => $post,
+            'data'    => $post,
         ], 200);
     }
 
     public function destroy(Post $post)
     {
-        Gate::authorize('delete', $post);
+        $this->authorize('delete', $post);
 
         $post->delete();
 
         return response()->json([
-            'message' => 'Post deleted successfully',
+            'message' => 'Post deleted successfully'
         ], 200);
     }
 }
