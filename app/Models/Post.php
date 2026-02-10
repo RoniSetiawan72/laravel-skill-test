@@ -13,15 +13,13 @@ class Post extends Model
 
     protected $fillable = [
         'title',
-        'content',
-        'user_id',
-        'is_draft',
+        'body',
         'published_at',
+        'user_id',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
-        'is_draft' => 'boolean',
     ];
 
     public function user()
@@ -29,13 +27,10 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function scopeActive(Builder $query): Builder
+    public function scopeActive($query)
     {
         return $query
-            ->where('is_draft', false)
-            ->where(function ($q) {
-                $q->whereNull('published_at')
-                ->orWhere('published_at', '<=', now());
-            });
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 }
